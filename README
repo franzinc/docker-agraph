@@ -2,6 +2,7 @@
     export DOCKER_TLS_VERIFY=1
     export DOCKER_HOST=tcp://192.168.59.105:2376
 
+*******************************************************************************
 Problem #1:
 
 $ docker ps
@@ -21,8 +22,21 @@ Solution:
   http://stackoverflow.com/questions/30980474/docker-complains-about-invalid-certificate-after-update-to-v1-7-0
 
 
+*******************************************************************************
 Problem #2: how to see VB GUI?
 
 Solution:
 
   $ sudo /Applications/VirtualBox.app/Contents/MacOS/VirtualBox &
+
+*******************************************************************************
+Problem #3: how to push an image to docker hub
+
+Solution:
+
+  On registry.hub.docker.com, maked the repository (agraph) under the
+  account (franzinc).  Then:
+
+  $ docker login
+  $ docker push franzinc/agraph
+  ...wait a long time...
