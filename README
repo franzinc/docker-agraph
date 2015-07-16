@@ -3,13 +3,15 @@
     export DOCKER_HOST=tcp://192.168.59.105:2376
 
 *******************************************************************************
-Problem #1:
+Problem #1: invalid certificate
 
 $ docker ps
 An error occurred trying to connect: Get https://192.168.59.105:2376/v1.19/containers/json: x509: certificate is valid for 127.0.0.1, 10.0.2.15, not 192.168.59.105
 $ 
 
-Solution:
+Solution: Upgrade to boot2docker 1.7.1
+
+OLD INFO:
 
   boot2docker ssh
   sudo curl -o /var/lib/boot2docker/profile https://gist.githubusercontent.com/garthk/d5a17007c277aa5c76de/raw/3d09c77aae38b4f2809d504784965f5a16f2de4c/profile
@@ -27,7 +29,7 @@ Problem #2: how to see VB GUI?
 
 Solution:
 
-  $ sudo /Applications/VirtualBox.app/Contents/MacOS/VirtualBox &
+  $ sudo /Applications/VirtualBox.app/Contents/MacOS/VirtualBox
 
 *******************************************************************************
 Problem #3: how to push an image to docker hub

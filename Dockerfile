@@ -11,10 +11,13 @@ RUN wget -q http://franz.com/ftp/pri/acl/ag/ag5.1/linuxamd64.64/agraph-5.1-linux
     && groupadd agraph \
     && useradd -d /data -g agraph agraph \
     && tar zxf agraph-5.1-linuxamd64.64.tar.gz \
+    && rm -f agraph-5.1-linuxamd64.64.tar.gz \
     && cd agraph-5.1 \
     && ./install-agraph /app/agraph --non-interactive --runas-user agraph --super-password ignored \
     && mkdir /app/agraph/etc \
-    && chown -R agraph:agraph /app
+    && chown -R agraph:agraph /app \
+    && yum -y remove wget tar \
+    && yum clean all
 
 COPY agraph.cfg /app/agraph/etc/agraph.cfg
 EXPOSE 10035 
