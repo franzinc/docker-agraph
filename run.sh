@@ -1,5 +1,10 @@
 #! /bin/bash
 
+if [ "$(uname)" != "Darwin" ]; then
+    echo $0: script only runs on Mac OS X.
+    exit 1
+fi
+
 vbm="/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
 vm="boot2docker-vm"
 

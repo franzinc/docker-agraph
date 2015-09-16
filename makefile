@@ -13,6 +13,7 @@ Dockerfile: Dockerfile.in
 	    -e 's/__VERSION__/$(VERSION)/g' \
 	    < $< > $@
 
+# Unless you work at Franz, Inc you should ignore this rule:
 push: FORCE
 	docker login -u $(REPO_PREFIX)
 	docker push franzinc/agraph:latest
