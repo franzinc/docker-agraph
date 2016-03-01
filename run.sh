@@ -1,5 +1,4 @@
 #! /bin/bash
-# Tested on Docker 1.9.0.
 
 if [ "$(uname)" != "Darwin" ]; then
     echo $0: this script only runs on Mac OS X.
@@ -7,7 +6,7 @@ if [ "$(uname)" != "Darwin" ]; then
 fi
 
 vbm="/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
-# The default name given by Docker 1.9.0:
+# The default name given by docker-machine:
 vm="default"
 
 set -eux
