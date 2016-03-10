@@ -21,7 +21,7 @@ RUN wget -q http://franz.com/ftp/pri/acl/ag/ag__VERSION__/linuxamd64.64/__TGZ__ 
 
 COPY agraph.cfg /app/agraph/etc/agraph.cfg
 EXPOSE 10035 
-VOLUME ["/app", "/data"]
+VOLUME /app
 
 CMD /app/agraph/bin/agraph-control --config /app/agraph/etc/agraph.cfg start \
     && tail -f /data/log/agraph.log

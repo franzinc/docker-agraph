@@ -1,12 +1,13 @@
 
-REPO_PREFIX = franzinc
-CONTAINERID = agraph
-
+# The version for this release:
 VERSION = 6.0.1
+
+ACCOUNT = franzinc
 TGZ = agraph-$(VERSION)-linuxamd64.64.tar.gz
 
 default: Dockerfile
-	docker build -t $(REPO_PREFIX)/$(CONTAINERID) .
+	-docker rmi $(ACCOUNT)/data
+	docker build -t $(ACCOUNT)/agraph .
 
 Dockerfile: Dockerfile.in Makefile
 	sed -e 's/__TGZ__/$(TGZ)/g' \
@@ -15,8 +16,13 @@ Dockerfile: Dockerfile.in Makefile
 
 # Unless you work at Franz, Inc you should ignore this rule:
 push: FORCE
-	docker login -u $(REPO_PREFIX)
-	docker push franzinc/agraph:latest
-	docker push franzinc/agraph:v$(VERSION)
+	docker push $(ACCOUNT)/agraph:latest
+	docker push $(ACCOUNT)/agraph:v$(VERSION)
+
+# Only need to do this once.  It's just an empty container to
+# use for /data.
+data: FORCE
+	docker build -t $(ACCOUNT)/agraph-data -f Dockerfile.data .
+	docker push $(ACCOUNT)/agraph-data:latest
 
 FORCE:
