@@ -2,7 +2,7 @@
 REPO_PREFIX = franzinc
 CONTAINERID = agraph
 
-VERSION = 6.0
+VERSION = 6.0.1
 TGZ = agraph-$(VERSION)-linuxamd64.64.tar.gz
 
 default: Dockerfile
