@@ -16,7 +16,8 @@ vbm="/Applications/VirtualBox.app/Contents/MacOS/VBoxManage"
 # The default name given by docker-machine:
 vm="default"
 
-e docker run -d -p 10000-10035:10000-10035 --name agraph franzinc/agraph
+e docker run -d -p 10000-10035:10000-10035 --name agraph \
+  --volumes-from agraph-data franzinc/agraph
 
 echo The IP of the container just started: $(docker-machine ip $vm)
 
