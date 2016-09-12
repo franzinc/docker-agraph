@@ -1,6 +1,6 @@
 
 # The version for this release:
-VERSION = 6.0.2
+VERSION = 6.1.1
 
 ACCOUNT = franzinc
 TGZ = agraph-$(VERSION)-linuxamd64.64.tar.gz
