@@ -2,26 +2,32 @@
 FROM centos:centos6
 MAINTAINER Franz Support <support@franz.com>
 
-RUN yum -y update; yum clean all
-# glibc-common and coreutils are likely redundant, but they're
-# in the .spec file for agraph, so list them here.
-RUN yum -y install glibc-common coreutils wget tar; yum clean all
+RUN yum -y update
+# util-linux-ng needed for getopt, which is used by configure-agraph.
+# Unfortuntely this causes a lot of extra stuff (including kernel packages)
+# to be installed.
+RUN yum -y install util-linux-ng
+RUN yum clean all
 
-RUN wget -q http://franz.com/ftp/pri/acl/ag/ag__VERSION__/linuxamd64.64/__TGZ__ \
-    && groupadd agraph \
+RUN curl -o __TGZ__ http://franz.com/ftp/pri/acl/ag/ag__VERSION__/linuxamd64.64/__TGZ__
+RUN groupadd agraph \
     && useradd -d /data -g agraph agraph \
     && tar zxf __TGZ__ \
-    && rm -f __TGZ__ \
-    && cd agraph-__VERSION__ \
-    && ./install-agraph /app/agraph --non-interactive --runas-user agraph --super-password ignored \
-    && mkdir /app/agraph/etc \
-    && chown -R agraph:agraph /app \
-    && yum -y remove wget tar \
-    && yum clean all
+    && rm -f __TGZ__
 
-COPY agraph.cfg /app/agraph/etc/agraph.cfg
+RUN cd agraph-__FINAL_VERSION__ && \
+       ./install-agraph /app/agraph -- --non-interactive \
+       		--config-file /data/etc/agraph.cfg \
+		--data-dir /data \
+		--log-dir /data/log \
+		--pid-file /data/var/agraph.pid \
+		--runas-user agraph \
+		--super-user test \
+		--super-password xyzzy \
+    && rm -fr agraph-__FINAL_VERSION__
+
+VOLUME /data
+# FIXME: Should also export the SessionPort range.
 EXPOSE 10035 
-VOLUME /app
-
-CMD /app/agraph/bin/agraph-control --config /app/agraph/etc/agraph.cfg start \
-    && tail -f /data/log/agraph.log
+CMD /app/agraph/bin/agraph-control --config /data/etc/agraph.cfg start \
+     && tail -f /data/log/agraph.log
