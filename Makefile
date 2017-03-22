@@ -15,11 +15,11 @@ default: Dockerfile
 #	-docker rmi $(ACCOUNT)/data
 	docker build -t $(TAG) .
 
-Dockerfile: Dockerfile.in Makefile
+Dockerfile: FORCE
 	sed -e 's/__TGZ__/$(TGZ)/g' \
 	    -e 's/__VERSION__/$(VERSION)/g' \
 	    -e 's/__FINAL_VERSION__/$(FINAL_VERSION)/g' \
-	    < $< > $@
+	    Dockerfile.in > Dockerfile
 
 # Unless you work at Franz, Inc you should ignore this rule:
 push: FORCE
