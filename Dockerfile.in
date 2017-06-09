@@ -3,19 +3,15 @@ FROM centos:centos6
 MAINTAINER Franz Support <support@franz.com>
 
 RUN yum -y update
-# util-linux-ng needed for getopt, which is used by configure-agraph.
-# Unfortuntely this causes a lot of extra stuff (including kernel packages)
-# to be installed.
-RUN yum -y install util-linux-ng
 RUN yum clean all
 
-RUN curl -o __TGZ__ http://franz.com/ftp/pri/acl/ag/ag__VERSION__/linuxamd64.64/__TGZ__
+RUN curl -f -o __TGZ__ http://franz.com/ftp/pri/acl/ag/ag__VERSION__/linuxamd64.64/__TGZ__
 RUN groupadd agraph \
     && useradd -d /data -g agraph agraph \
     && tar zxf __TGZ__ \
     && rm -f __TGZ__
 
-RUN cd agraph-__FINAL_VERSION__ && \
+RUN pushd agraph-__FINAL_VERSION__ && \
        ./install-agraph /app/agraph -- --non-interactive \
        		--config-file /data/etc/agraph.cfg \
 		--data-dir /data \
@@ -24,10 +20,14 @@ RUN cd agraph-__FINAL_VERSION__ && \
 		--runas-user agraph \
 		--super-user test \
 		--super-password xyzzy \
-    && rm -fr agraph-__FINAL_VERSION__
+    && popd && rm -r agraph-__FINAL_VERSION__
+# Augment the config with a SessionPorts directive
+RUN echo "SessionPorts 10000-10034" >> /data/etc/agraph.cfg
 
 VOLUME /data
-# FIXME: Should also export the SessionPort range.
-EXPOSE 10035 
-CMD /app/agraph/bin/agraph-control --config /data/etc/agraph.cfg start \
-     && tail -f /data/log/agraph.log
+
+EXPOSE 10000-10034 10035 
+
+COPY entrypoint.sh /
+CMD ["/entrypoint.sh"]
+

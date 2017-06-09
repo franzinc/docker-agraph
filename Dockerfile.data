@@ -1,6 +1,0 @@
-FROM centos:centos6
-MAINTAINER Franz Support <support@franz.com>
-
-VOLUME /data
-
-CMD ["true"]
