@@ -4,8 +4,8 @@ endif
 
 ACCOUNT = franzinc
 
-# Strip any '.rcN' from VERSION.
-FINAL_VERSION=$(shell echo $(VERSION) | sed -e 's/\.rc.*$$//')
+# Strip any '.rcN' or '.tN' from VERSION.
+FINAL_VERSION=$(shell echo $(VERSION) | sed -e 's/\.rc.*$$//' -e 's/\.t[0-9]$$//')
 
 TAG = $(ACCOUNT)/agraph:v$(VERSION)
 LATEST_TAG = $(ACCOUNT)/agraph:latest
@@ -14,7 +14,7 @@ TGZ = agraph-$(FINAL_VERSION)-linuxamd64.64.tar.gz
 
 default: Dockerfile
 	docker build -t $(TAG) .
-	docker tag $(TAG) $(LATEST_TAG)
+	@if ./release-version-p $(VERSION); then docker tag $(TAG) $(LATEST_TAG); fi
 
 Dockerfile: FORCE
 	sed -e 's/__TGZ__/$(TGZ)/g' \
