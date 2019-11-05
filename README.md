@@ -1,57 +1,100 @@
-Docker AllegroGraph
-===================
+# AllegroGraph in Docker
 
-Table of contents
------------------
+This repository contains a set of instruments and configuration files
+needed to build, configure and run AllegroGraph in Docker. The new
+images use Ubuntu as a base image and are not compatible with the old
+DockerHub images (AG v6.6.0 and below), which use CentOS.
 
-   * Description
-   * Dependencies
-   * Installation
-   * Configuration
-   * Licence
 
-Description
------------
 
-This software allows running AllegroGraph (any edition) in a Docker
-container.
+## Building AllegroGraph Docker images
 
-Dependencies
-------------
+AllegroGraph Docker images can be conveniently built using the
+`agdock` tool by specifying the version of AllegroGraph release to use
+in the image. The version can be either a release version in the form
+`<major>.<minor>.<patch>` (e.g. `6.6.0` or `7.0.0`), a release
+candidate `<release-version>.rc<N>` (e.g. `7.0.0.rc1`), a test release
+`<release-version>.t<N>` (e.g. `7.0.0.t5`) or a latest nightly build
+`<release-version>-nightly` (e.g. `7.0.0-nightly`):
 
-This depends on Docker and AllegroGraph.
+    $ ./agdock build --version=6.6.0
+    $ ./agdock build --version=7.0.0-nightly
 
-Installation
-------------
+Alternatively, the AllegroGraph distribution tarball (either a local
+file or a URL) can be supplied via `--dist` argument:
 
-Using the container built by Franz, Inc:
+    $ ./agdock build --dist=agraph-7.0.0-linuxamd64.64.tar.gz
 
-    $ docker pull franzinc/agraph
+The same can be done via `make` by setting `VERSION` environment variable:
 
-Building from source:
+    $ VERSION=7.0.0 make
 
-    $ make
+Finally, images prebuilt by Franz, Inc. can be pulled from DockerHub:
 
-See `run.sh` for details on how to run the container.
+    $ docker pull franzinc/agraph:v6.6.0
 
-Configuration
--------------
+For other `agdock build` parameters and details, see the help message
+that can be printed with `agdock --help`.
 
-The AllegroGraph configuration `agraph.cfg`.  See the AllegroGraph
-documentation for more information on configuration options for
-AllegroGraph.
 
-Documentation
--------------
 
-The best resource outside of Docker is the AllegroGraph documentation:
+## Configuring and running AllegroGraph containers
 
-http://franz.com/agraph/support/documentation/current/agraph-introduction.html
+In order to run an AllegroGraph container with data and configuration
+persistence, the externally supplied data and configuration volumes
+(either as host directories or Docker volumes) must be mounted at
+`/agraph/data` and `/agraph/etc` respectively. The AllegroGraph
+configuration file `/agraph/etc/agraph.cfg` is generated on container
+start but only if it does not already exist. Superuser credentials can
+be supplied in plaintext via `AGRAPH_SUPER_USER` and
+`AGRAPH_SUPER_PASSWORD` variables or in files pointed to by
+`AGRAPH_SUPER_USER_FILE` and `AGRAPH_SUPER_PASSWORD_FILE`
+variables. If none of these variables are supplied, the default user
+(`admin`) and a randomly generated password will be created and
+printed at the beginning of the AllegroGraph log printed to the
+standard output.
 
-License
--------
+Example of configuring AllegroGraph container using Docker volumes:
 
-Copyright (c) 2015, Franz, Inc.
+    # Volume for AllegroGraph data and log files.
+    $ docker volume create agdata
+
+    # Volume for AllegroGraph config files.
+    $ docker volume create agconfig
+
+    # Start the container with a shared memory size of 1 Gb, which is
+    # a required minimum.
+    $ docker run -it --rm --shm-size 1g \
+             -v agdata:/agraph/data -v agconfig:/agraph/etc \
+             -e AGRAPH_SUPER_USER=admin -e AGRAPH_SUPER_PASSWORD=pass \
+             -p 10000-10035:10000-10035 \
+             --name agraph-instance-1 \
+             franzinc/agraph:v7.0.0
+
+For convenience purposes, `agdock` tool provides a `run` command for
+running AllegroGraph containers, but it makes a lot of assumptions
+about the `docker run` arguments and as a result lacks flexibility. In
+the simplest case, the image name and tag can be computed from version
+specified in the same form as for `agdock build`:
+
+    $ ./agdock run --version=7.0.0-nightly
+
+Alternatively, the image can be specified explicitly:
+
+    $ ./agdock run --image=franzinc/agraph:v7.0.0
+
+Another useful `agdock` command is `agtool`, which can be used to run
+`agtool` CLI in a running AllegroGraph container. The same container
+name must be used:
+
+    $ ./agdock run --version=7.0.0 --name=agraph-instance-1
+    $ ./agdock agtool --name=agraph-instance-1 -- create-db user:pass@10035/test
+
+
+
+## License
+
+Copyright (c) 2020, Franz, Inc.
 All rights reserved.
 
 Redistribution and use of this source code, with or without

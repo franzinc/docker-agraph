@@ -1,0 +1,278 @@
+#! /bin/bash
+
+COMMAND_NAME=$0
+SUBCOMMAND_NAME=$1
+
+USAGE="Usage:
+    $COMMAND_NAME COMMAND [ARGS]
+
+    Commands (options must be of option=value form, if not stated otherwise):
+        help  - display this message
+
+        build - build a docker image with a given AG version installed
+            -v/--version - AG version to use; version should not start with 'v' but can end
+                           with '.tN', '.rcN' and '-nightly' for test releases, release
+                           candidates and nightly builds respectively (required if --dist is not
+                           supplied)
+            -d/--dist    - AG distribution archive to use; can be a path to local file or
+                           a tarball URL (required if --version is not supplied)
+            -t/--tag     - tag to use for the new image (defaults to franzinc/agraph:v<version>)
+
+        run - run a Docker image for a given AG version
+            -v/--version - AG version to run; if specified, the franzinc/agraph image will be
+                           used (required if --image is not supplied)
+            -i/--image   - tag of the image to run (required if --version is not supplied)
+            -n/--name    - name of the container (optional, defaults to agraph<version>)
+
+        push - push a Docker image with a given AG version to the image repository
+            -i/--image - tag of the image to push to DockerHub (required)
+            --latest   - additionally push the same image tagged as the <account>/<image>:latest
+
+        agtool - run agtool tool in a running AG container
+            -n/--name - name of the running container in which to run the agtool
+
+
+    Examples:
+
+        # build Docker image for the latest 7.0.0 nightly AG build:
+        $COMMAND_NAME build --version=7.0.0-nightly
+
+        # build Docker image from a local AG tarball:
+        $COMMAND_NAME build --dist=agraph-7.0.0-linuxamd64.64.tar.gz
+
+        # run Docker container with 7.0.0 nightly (must be prebuilt):
+        $COMMAND_NAME run --image=franzinc/agraph:v7.0.0-nightly
+
+        # run Docker container named agraph1 specifying only the AG version:
+        $COMMAND_NAME run --version=7.0.0.t1 --name=agraph1
+
+        # create a new repository test by running agtool in an AG container
+        # named agraph1
+        $COMMAND_NAME agtool --name=agraph1 -- create-db user:pass@10035/test
+"
+
+
+DOC="$COMMAND_NAME - Franz Inc's AllegroGraph Dockerization tool
+
+Configure, build, publish and run multiple versions of Dockerized AllegroGraph.
+
+$USAGE
+"
+
+# Print help/usage message.
+function agdock_help () {
+    shift
+    for i in "$@"
+    do
+        case $i in
+            *)
+                echo -e "$COMMAND_NAME help: unknown option $i\n\n$USAGE"
+                exit 1
+                ;;
+        esac
+    done
+    echo -e "$DOC" | ${PAGER:-less}
+}
+
+
+# Build and tag the image. Tag image as latest, if this is a release
+# version (i.e. not .rcN, .tN or -nightly).
+function agdock_build () {
+    shift
+    for i in "$@"
+    do
+        case $i in
+            -v=*|--version=*)
+                full_version="${i#*=}"
+                ;;
+            -d=*|--dist=*)
+                dist="${i#*=}"
+                ;;
+            -t=*|--tag=*)
+                tag="${i#*=}"
+                ;;
+            *)
+                echo -e "$COMMAND_NAME build: unknown option $i\n\n$USAGE"
+                exit 1
+                ;;
+        esac
+    done
+    # Detect version and dist archive: if --dist is supplied,
+    # determine the version from the archive name, otherwise expect it
+    # to be supplied via --version argument; default to latest nightly
+    # build.
+    if [ ! -z "$dist" ]
+    then
+        # Full version (including test release, release candidate or nightly tag.
+        full_version=$(echo $dist \
+                           | grep -oE '[0-9]+\.[0-9]+\.[0-9]+((\.rc[^/]*)|(\.t[0-9])|(-nightly))?' \
+                           | head -n 1)
+        # Short version (of the <i>.<j>.<k> form).
+        short_version=$(echo $full_version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    else
+        # Full version is expected to be provided.
+        full_version=${full_version:-7.0.0-nightly}
+        # Short version (of the <i>.<j>.<k> form).
+        short_version=$(echo $full_version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        # If full_version contains "nightly" tag, find the latest nightly,
+        # otherwise, use the release link.
+        # TODO: this logic can be removed if we use consistent URLs
+        #       for releases/nightly builds.
+        if echo $full_version | grep -q 'nightly'
+        then
+            version_url=https://franz.com/ftp/pub/agraph/nightly/$short_version/
+            latest_build=$(curl -s $version_url \
+                               | grep -oE '[0-9]{8}-[0-9]{6}/' \
+                               | head -n 1)
+            url_base="$version_url$latest_build"
+        else
+            url_base=http://franz.com/ftp/pri/acl/ag/ag$full_version/linuxamd64.64/
+        fi
+        archive_name="agraph-$short_version-linuxamd64.64.tar.gz"
+        dist="$url_base$archive_name"
+    fi
+    tag=${tag:-franzinc/agraph:v$full_version}
+    docker build \
+	   --build-arg AG_VERSION=$short_version \
+           --build-arg AG_ARCHIVE=$dist \
+	   -t $tag .
+}
+
+
+# Run a container from an image for a given AG version, capturing
+# AGRAPH_SUPER_USER and AGRAPH_SUPER_PASSWORD variables from host
+# environment. Command is run in a subshell with exported username and
+# password.
+function agdock_run () {
+    shift
+    for i in "$@"
+    do
+        case $i in
+            -i=*|--image=*)
+                image="${i#*=}"
+                ;;
+            -n=*|--name=*)
+                name="${i#*=}"
+                ;;
+            -v=*|--version=*)
+                version="${i#*=}"
+                ;;
+            *)
+                echo -e "$COMMAND_NAME run: unknown option $i\n\n$USAGE"
+                exit 1
+                ;;
+        esac
+    done
+    if [ ! -z "$image" ]
+    then
+        version=$(echo $image \
+                      | grep -oE '[0-9]+\.[0-9]+\.[0-9]+((\.rc[^/]*)|(\.t[0-9])|(-nightly))?')
+    elif [ ! -z "$version" ]
+    then
+        image=franzinc/agraph:v$version
+    else
+        echo -e "$COMMAND_NAME run: either tag or version must be specified."
+        exit 1
+    fi
+
+    name=${name:-agraph$version}
+    (
+        export AGRAPH_SUPER_USER=${AGRAPH_SUPER_USER:-test};
+        export AGRAPH_SUPER_PASSWORD=${AGRAPH_SUPER_PASSWORD:-xyzzy};
+        docker run -it --rm \
+               --shm-size 1g \
+               -e AGRAPH_SUPER_USER \
+               -e AGRAPH_SUPER_PASSWORD \
+               -p 10000-10035:10000-10035 \
+               --name $name \
+               $image
+    )
+}
+
+
+# Push the specified image to DockerHub, optionally tagged as latest.
+function agdock_push () {
+    shift
+    for i in "$@"
+    do
+        case $i in
+            -i=*|--image=*)
+                image="${i#*=}"
+                ;;
+            --latest)
+                latest="t"
+                ;;
+            *)
+                echo -e "$COMMAND_NAME push: unknown option $i\n\n$USAGE"
+                exit 1
+                ;;
+        esac
+    done
+    if [ -z "$image" ]
+    then
+        echo -e "$COMMAND_NAME push: --image argument is required."
+        exit 1
+    fi
+    docker push $image
+    if [ ! -z "$latest" ]
+    then
+        image_latest="${image%:*}:latest"
+        docker tag $image $image_latest
+        docker push $image_latest
+    fi
+}
+
+
+# Execute agtool command in the running container.
+function agdock_agtool () {
+    shift
+    for i in "$@"
+    do
+        case $i in
+            -n=*|--name=*)
+                name="${i#*=}"
+                ;;
+            --)
+                break
+                ;;
+            *)
+                echo -e "$COMMAND_NAME agtool: unknown option $i\n\n$USAGE"
+                exit 1
+                ;;
+        esac
+    done
+    shift # skip --name argument
+    shift # skip the -- marker argument
+    if [ -z "$name" ]
+    then
+        echo -e "$COMMAND_NAME agtool: --name is required."
+        exit 1
+    fi
+    docker exec $name agtool $@
+}
+
+
+# ------------------------------------------------------------------------------
+# Entrypoint
+
+case $SUBCOMMAND_NAME in
+    "help")
+        agdock_help
+        ;;
+    "build")
+        agdock_build $@
+        ;;
+    "run")
+        agdock_run $@
+        ;;
+    "push")
+        agdock_push $@
+        ;;
+    "agtool")
+        agdock_agtool $@
+        ;;
+    *)
+        echo -e "$COMMAND_NAME: unknown command '$SUBCOMMAND_NAME'\n\n$USAGE"
+        exit 1
+        ;;
+esac
