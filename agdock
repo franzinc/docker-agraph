@@ -157,6 +157,9 @@ function agdock_run () {
             -v=*|--version=*)
                 version="${i#*=}"
                 ;;
+            --detach)
+                detach=-d
+                ;;
             *)
                 echo -e "$COMMAND_NAME run: unknown option $i\n\n$USAGE"
                 exit 1
@@ -179,11 +182,14 @@ function agdock_run () {
     (
         export AGRAPH_SUPER_USER=${AGRAPH_SUPER_USER:-test};
         export AGRAPH_SUPER_PASSWORD=${AGRAPH_SUPER_PASSWORD:-xyzzy};
-        docker run -it --rm \
+        export AGRAPH_SESSION_PORTS=${AGRAPH_SESSION_PORTS:-10000-10034}
+        export AGRAPH_HTTP_PORT=${AGRAPH_HTTP_PORT:-10035}
+        docker run $detach --rm \
                --shm-size 1g \
                -e AGRAPH_SUPER_USER \
                -e AGRAPH_SUPER_PASSWORD \
-               -p 10000-10035:10000-10035 \
+               -p $AGRAPH_SESSION_PORTS:10000-10034 \
+               -p $AGRAPH_HTTP_PORT:10035 \
                --name $name \
                $image
     )

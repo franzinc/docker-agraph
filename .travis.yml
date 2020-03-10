@@ -1,0 +1,41 @@
+language: generic
+
+services:
+  - docker
+
+env:
+  global:
+    - AGRAPH_SESSION_PORTS=30000-30034
+    - AGRAPH_HTTP_PORT=30035
+  jobs:
+    - AGRAPH_SUPER_USER=admin
+      AGRAPH_SUPER_PASSWORD=secret
+      AG_USER=admin
+      AG_PASSWORD=secret
+    - AGRAPH_SUPER_USER_FILE=/agraph/etc/user.txt
+      AGRAPH_SUPER_PASSWORD_FILE=/agraph/etc/password.txt
+      AG_USER=user-from-file
+      AG_PASSWORD=password-from-file
+
+install:
+  - git clone http://github.com/franzinc/docker-agraph
+  - cd docker-agraph
+  - ./agdock build --version=7.0.0-nightly
+  - mkdir agraph-etc
+  - echo 'user-from-file' > agraph-etc/user.txt
+  - echo 'password-from-file' > agraph-etc/password.txt
+
+script:
+  - >
+    docker run -d --rm --shm-size 1g \
+               -e AGRAPH_SUPER_USER \
+               -e AGRAPH_SUPER_USER_FILE \
+               -e AGRAPH_SUPER_PASSWORD \
+               -e AGRAPH_SUPER_PASSWORD_FILE \
+               -p 30000-30035:10000-10035 \
+               -v $(pwd)/agraph-etc:/agraph/etc \
+               --name agraph \
+               franzinc/agraph:v7.0.0-nightly
+  - while [ ! $(curl http://localhost:30035/version) ]; do sleep 5; done
+  - ./agdock agtool --name=agraph -- create-db $AG_USER:$AG_PASSWORD@127.0.0.2:10035/r0
+  - ./agdock agtool --name=agraph -- triple-count $AG_USER:$AG_PASSWORD@127.0.0.2:10035/r0 | grep '^0$'

@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
+# Recursively change ownership of the agraph directory (included
+# volumes /agraph/data and /agraph/etc).
+sudo chown -R agraph:agraph /agraph
+
+
 # Make sure shared memory requirements are met.
 shm_size=$(df -P /dev/shm | grep -v Filesystem | awk '{print $2}')
 
@@ -59,8 +64,8 @@ EOF
         --log-dir        $AGDATADIR               \
         --super-user     "$AGRAPH_SUPER_USER"     \
         --super-password "$AGRAPH_SUPER_PASSWORD" \
+        --session-ports  10000-10034              \
         --runas-user     agraph
-    echo "SessionPorts 10000-10034" >> $AGRAPHCFG
 fi
 
 function terminate {
@@ -71,13 +76,19 @@ function terminate {
 
 trap "echo Caught signal; terminate" SIGINT SIGTERM SIGQUIT
 
-# Start AllegroGraph daemon
-/agraph/bin/agraph-control --config $AGRAPHCFG start
-
-# Monitor the logfile.
-# This pattern (& to put the process in the background and
-# then blocking using 'wait') appears to be the most reliable
-# way of getting bash to respond to signals.
-tail -f $AGRAPHLOG &
-wait $!
-
+# If container's entrypoint is run without arguments, start
+# AllegroGraph, otherwise interpret the arguments as a command to run.
+if [ "$#" -ne "0" ]
+then
+    # Execute provided arguments.
+    exec "$@"
+else
+    # Start AllegroGraph daemon.
+    /agraph/bin/agraph-control --config $AGRAPHCFG start
+    # Monitor the logfile.
+    # This pattern (& to put the process in the background and
+    # then blocking using 'wait') appears to be the most reliable
+    # way of getting bash to respond to signals.
+    tail -f $AGRAPHLOG &
+    wait $!
+fi
