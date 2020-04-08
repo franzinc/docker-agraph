@@ -24,9 +24,9 @@ USAGE="Usage:
             -i/--image   - tag of the image to run (required if --version is not supplied)
             -n/--name    - name of the container (optional, defaults to agraph<version>)
 
-        push - push a Docker image with a given AG version to the image repository
+        push - push a Docker image to the image repository
             -i/--image - tag of the image to push to DockerHub (required)
-            --latest   - additionally push the same image tagged as the <account>/<image>:latest
+            --latest   - additionally push the same image tagged 'latest'
 
         agtool - run agtool tool in a running AG container
             -n/--name - name of the running container in which to run the agtool
