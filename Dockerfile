@@ -5,14 +5,13 @@ MAINTAINER Franz Support <support@franz.com>
 ARG AG_ARCHIVE
 ARG AG_VERSION
 
-RUN apt-get update && apt-get install -y openssl openssl1.0 sudo
+RUN apt-get update \
+        && apt-get install -y openssl openssl1.0 sudo curl \
+        && rm -rf /var/lib/apt/lists/*
 
-ADD $AG_ARCHIVE ./
-
-# Unpack AG distribution archive, install AG into /agraph directory
-# and delete the archive and unpacked files.
-RUN if [ -f "${AG_ARCHIVE##*/}" ]; then                                 \
-        tar zxf "${AG_ARCHIVE##*/}" && rm -f "${AG_ARCHIVE##*/}"; fi    \
+# Download and unpack the AG distribution archive, install AG into
+# /agraph directory and delete the unpacked files.
+RUN curl $AG_ARCHIVE | tar zxf - \
         && ./agraph-${AG_VERSION}/install-agraph /agraph --no-configure \
         && rm -r agraph-${AG_VERSION}
 
