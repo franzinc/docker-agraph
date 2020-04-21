@@ -59,6 +59,8 @@ Configure, build, publish and run multiple versions of Dockerized AllegroGraph.
 $USAGE
 "
 
+FULL_VERSION_REGEX='[0-9]+\.[0-9]+\.[0-9]+((\.rc[0-9]+)|(\.t[0-9]+)|(-nightly))?'
+
 # Print help/usage message.
 function agdock_help () {
     shift
@@ -105,7 +107,7 @@ function agdock_build () {
     then
         # Full version (including test release, release candidate or nightly tag.
         full_version=$(echo $dist \
-                           | grep -oE '[0-9]+\.[0-9]+\.[0-9]+((\.rc[^/]*)|(\.t[0-9])|(-nightly))?' \
+                           | grep -oE "$FULL_VERSION_REGEX" \
                            | head -n 1)
         # Short version (of the <i>.<j>.<k> form).
         short_version=$(echo $full_version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
@@ -169,7 +171,7 @@ function agdock_run () {
     if [ ! -z "$image" ]
     then
         version=$(echo $image \
-                      | grep -oE '[0-9]+\.[0-9]+\.[0-9]+((\.rc[^/]*)|(\.t[0-9])|(-nightly))?')
+                      | grep -oE "$FULL_VERSION_REGEX")
     elif [ ! -z "$version" ]
     then
         image=franzinc/agraph:v$version
