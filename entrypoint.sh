@@ -1,9 +1,9 @@
 #!/bin/bash -e
 
-# Recursively change ownership of the agraph directory (included
-# volumes /agraph/data and /agraph/etc).
-sudo chown -R agraph:agraph /agraph
-
+AG_RUNAS_USER=agraph
+AG_DATA_DIR=/agraph/data
+AG_CFG_FILE=/agraph/etc/agraph.cfg
+AG_LOG_FILE=/agraph/data/agraph.log
 
 # Make sure shared memory requirements are met.
 shm_size=$(df -P /dev/shm | grep -v Filesystem | awk '{print $2}')
@@ -17,6 +17,13 @@ option in order to operate correctly:
 EOF
     exit 1
 fi
+
+# Find all files not owned by $AG_RUNAS_USER in the /agraph/data and
+# /agraph/etc directories (volume mount points) and change ownership
+# to $AG_RUNAS_USER:$AG_RUNAS_GROUP.
+find /agraph/data /agraph/etc \! -user agraph -exec sudo chown $AG_RUNAS_USER {} +
+# Allow $AG_RUNAS_USER access to /agraph/lib/patches directory.
+sudo chown $AG_RUNAS_USER /agraph/lib/patches
 
 function file_env {
     local var="$1"
@@ -35,12 +42,8 @@ function file_env {
     export "$var"="$val"
 }
 
-AGDATADIR=/agraph/data
-AGRAPHCFG=/agraph/etc/agraph.cfg
-AGRAPHLOG=/agraph/data/agraph.log
-
-# Configure agraph if $agraphcfg file does not exist.
-if [ ! -f $AGRAPHCFG ]
+# Configure agraph if $AG_CFG_FILE file does not exist.
+if [ ! -f $AG_CFG_FILE ]
 then
     file_env 'AGRAPH_SUPER_USER'
     file_env 'AGRAPH_SUPER_PASSWORD'
@@ -59,13 +62,13 @@ EOF
     fi
     /agraph/lib/configure-agraph                  \
         --non-interactive                         \
-        --config-file    $AGRAPHCFG               \
-        --data-dir       $AGDATADIR               \
-        --log-dir        $AGDATADIR               \
+        --config-file    $AG_CFG_FILE             \
+        --data-dir       $AG_DATA_DIR             \
+        --log-dir        $AG_DATA_DIR             \
         --super-user     "$AGRAPH_SUPER_USER"     \
         --super-password "$AGRAPH_SUPER_PASSWORD" \
         --session-ports  10000-10034              \
-        --runas-user     agraph
+        --runas-user     $AG_RUNAS_USER
     # Install license from a variable or from a file, if supplied.
     file_env 'AGRAPH_LICENSE'
     if [ -n "$AGRAPH_LICENSE" ]; then
@@ -75,7 +78,7 @@ fi
 
 function terminate {
     echo Shutting down AllegroGraph
-    /agraph/bin/agraph-control --config $AGRAPHCFG stop
+    /agraph/bin/agraph-control --config $AG_CFG_FILE stop
     exit 0
 }
 
@@ -89,11 +92,11 @@ then
     exec "$@"
 else
     # Start AllegroGraph daemon.
-    /agraph/bin/agraph-control --config $AGRAPHCFG start
+    /agraph/bin/agraph-control --config $AG_CFG_FILE start
     # Monitor the logfile.
     # This pattern (& to put the process in the background and
     # then blocking using 'wait') appears to be the most reliable
     # way of getting bash to respond to signals.
-    tail -f $AGRAPHLOG &
+    tail -f $AG_LOG_FILE &
     wait $!
 fi

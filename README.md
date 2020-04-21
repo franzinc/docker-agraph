@@ -99,10 +99,11 @@ AllegroGraph server is run as `agraph:agraph` user, which is also the
 default user for the container (it is used to run commands provided to
 `docker run` and `docker exec`).
 
-Note, that *`entrypoint.sh` recursively changes the owner of `/agraph`
-tree to `agraph:agraph` user on container start*. This may be
-undesired when mounting local directories are as `/agraph/data` and
-`/agraph/etc` volumes into AllegroGraph container.
+Note, that **`entrypoint.sh` recursively changes the owner of
+`/agraph/data` and `/agraph/etc` trees (which are the mount points for
+data and configuration volumes, respectively) to `agraph:agraph` user
+on container start**. This may be undesired when using host
+directories as data/configuration volumes.
 
 For convenience purposes, `agdock` tool provides a `run` command for
 running AllegroGraph containers, but it makes a lot of assumptions
