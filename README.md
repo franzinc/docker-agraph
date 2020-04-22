@@ -71,7 +71,31 @@ Example of configuring AllegroGraph container using Docker volumes:
              --name agraph-instance-1 \
              franzinc/agraph:v7.0.0
 
-AllegroGraph server is run as `agraph:agraph` user, which is also a
+
+Similarly, `AGRAPH_LICENSE` and `AGRAPH_LICENSE_FILE` variables can be
+used to supply a license section of `agraph.cfg`:
+
+    # Create variables with username, password with LicenseCode config
+    # directives.
+    $ AGRAPH_SUPER_USER=admin
+    $ AGRAPH_SUPER_PASSWORD=password
+    $ AGRAPH_LICENSE="
+    <LicenseCode>
+      # License code...
+    </LicenseCode>
+    "
+
+    # Start AllegroGraph container with injected license.
+    $ docker run -it --rm --shm-size 1g \
+             -e AGRAPH_SUPER_USER \
+             -e AGRAPH_SUPER_PASSWORD \
+             -e AGRAPH_LICENSE \
+             -p 10000-10035:10000-10035 \
+             --name agraph-instance-1 \
+             franzinc/agraph:v7.0.0
+
+
+AllegroGraph server is run as `agraph:agraph` user, which is also the
 default user for the container (it is used to run commands provided to
 `docker run` and `docker exec`).
 

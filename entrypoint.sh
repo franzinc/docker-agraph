@@ -66,6 +66,11 @@ EOF
         --super-password "$AGRAPH_SUPER_PASSWORD" \
         --session-ports  10000-10034              \
         --runas-user     agraph
+    # Install license from a variable or from a file, if supplied.
+    file_env 'AGRAPH_LICENSE'
+    if [ -n "$AGRAPH_LICENSE" ]; then
+        echo "$AGRAPH_LICENSE" >> $AGRAPHCFG
+    fi
 fi
 
 function terminate {
