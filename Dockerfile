@@ -19,37 +19,34 @@ RUN if [ -f "${AG_ARCHIVE##*/}" ];                                        \
 
 
 
-# Stage 1 - copy the AG installed during stage 0 into a clean Ubuntu
-# base and proceed building the rest of the image.
+# Stage 1 - prepare a clean Ubuntu, install dependencies, setup a user
+# and copy the AG installed during stage 0.
 FROM ubuntu:bionic
 MAINTAINER Franz Support <support@franz.com>
-
-COPY --from=installation-stage /agraph /agraph
 
 # Install the same dependencies as for the stage0 (installation) and
 # remove apt registries.
 RUN apt-get update && apt-get install -y openssl openssl1.0 sudo \
         && rm -rf /var/lib/apt/lists/*
 
-# Create agraph user, enable passwordless sudo and manually copy skel
-# files to the agraph user's home (useradd -m cannot be used, since
-# the /agraph directory already exists). For .sudo_as_admin_successful
-# file details see https://askubuntu.com/questions/22607.
-RUN groupadd -r agraph                                                  \
-        && useradd -M -g agraph -G sudo -s /bin/bash -d /agraph agraph  \
-        && echo "agraph ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers        \
-        && touch /agraph/.sudo_as_admin_successful                      \
-        && cp -r /etc/skel/. /agraph
+# Create agraph user, enable passwordless sudo and silence the "To run
+# a command as administrator ..." notification (for more details, see
+# https://askubuntu.com/questions/22607).
+RUN useradd -m -G sudo -s /bin/bash -d /agraph agraph            \
+        && echo "agraph ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
+        && touch /agraph/.sudo_as_admin_successful
+
+COPY --from=installation-stage /agraph /agraph
 
 ENV PATH=/agraph/bin:$PATH
+
+USER agraph
+WORKDIR /agraph
 
 VOLUME /agraph/data
 VOLUME /agraph/etc
 
 EXPOSE 10000-10034 10035
-
-USER agraph
-WORKDIR /agraph
 
 COPY entrypoint.sh /
 ENTRYPOINT ["/entrypoint.sh"]
