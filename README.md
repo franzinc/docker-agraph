@@ -64,9 +64,34 @@ Example of configuring AllegroGraph container using Docker volumes:
 
     # Start the container with a shared memory size of 1 Gb, which is
     # a required minimum.
-    $ docker run -it --rm --shm-size 1g \
-             -v agdata:/agraph/data -v agconfig:/agraph/etc \
-             -e AGRAPH_SUPER_USER=admin -e AGRAPH_SUPER_PASSWORD=pass \
+    $ docker run -it --rm \
+             --shm-size 1g \
+             -v agdata:/agraph/data \
+             -v agconfig:/agraph/etc \
+             -e AGRAPH_SUPER_USER=admin \
+             -e AGRAPH_SUPER_PASSWORD=pass \
+             -p 10000-10035:10000-10035 \
+             --name agraph-instance-1 \
+             franzinc/agraph:v7.0.0
+
+The following example does the same but supplies superuser credentials
+as files - credentials are written to the files in the `secrets`
+directory, which is then mapped into the `/secrets` directory in the
+container:
+
+    # Create a directory with username/password files.
+    $ mkdir secrets
+    $ echo admin > secrets/super_user.txt
+    $ echo pass > secrets/super_password.txt
+
+    # Start the container with superuser credentials supplied via files.
+    $ docker run -it --rm \
+             --shm-size 1g \
+             -v agdata:/agraph/data \
+             -v agconfig:/agraph/etc \
+             -v $(pwd)/secrets:/secrets \
+             -e AGRAPH_SUPER_USER_FILE=/secrets/super_user.txt \
+             -e AGRAPH_SUPER_PASSWORD_FILE=/secrets/super_password.txt \
              -p 10000-10035:10000-10035 \
              --name agraph-instance-1 \
              franzinc/agraph:v7.0.0
