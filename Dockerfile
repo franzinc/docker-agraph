@@ -36,7 +36,7 @@ RUN useradd -m -G sudo -s /bin/bash -d /agraph agraph            \
         && echo "agraph ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers \
         && touch /agraph/.sudo_as_admin_successful
 
-COPY --from=installation-stage /agraph /agraph
+COPY --chown=agraph --from=installation-stage /agraph /agraph
 
 ENV PATH=/agraph/bin:$PATH
 

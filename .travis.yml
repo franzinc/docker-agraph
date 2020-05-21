@@ -39,3 +39,4 @@ script:
   - while [ ! $(curl http://localhost:30035/version) ]; do sleep 5; done
   - ./agdock agtool --name=agraph -- create-db $AG_USER:$AG_PASSWORD@127.0.0.2:10035/r0
   - ./agdock agtool --name=agraph -- triple-count $AG_USER:$AG_PASSWORD@127.0.0.2:10035/r0 | grep '^0$'
+  - ./agdock agtool --name=agraph -- gruff install 8.0.1 # bug26201
