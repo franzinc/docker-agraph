@@ -72,7 +72,7 @@ EOF
     # Install license from a variable or from a file, if supplied.
     file_env 'AGRAPH_LICENSE'
     if [ -n "$AGRAPH_LICENSE" ]; then
-        echo "$AGRAPH_LICENSE" >> $AGRAPHCFG
+        echo "$AGRAPH_LICENSE" >> $AG_CFG_FILE
     fi
 fi
 
