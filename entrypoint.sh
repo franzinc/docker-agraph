@@ -8,7 +8,11 @@ AG_LOG_FILE=/agraph/data/agraph.log
 # Make sure shared memory requirements are met.
 shm_size=$(df -P /dev/shm | grep -v Filesystem | awk '{print $2}')
 
-if [ "$shm_size" -lt 1048576 ]
+# When using podman a request for 1g results in
+# a shared memory segment of 976564k bytes and not 1g
+# and that is good enough.
+
+if [ "$shm_size" -lt 976000 ]
 then
     cat <<EOF
 The container for AllegroGraph must be started with the following 
