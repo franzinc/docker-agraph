@@ -1,0 +1,29 @@
+name: Build and Push
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build_and_push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        ag_version: ["7.1.0", "7.0.4", "7.0.3", "7.0.2", "7.0.1"]
+    steps:
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Build
+        run: ./agdock build --version=${{ matrix.ag_version }} --tag=franzinc/agraph:v${{ matrix.ag_version }}
+      - name: Push
+        run: ./agdock push --image=franzinc/agraph:v${{ matrix.ag_version }}
