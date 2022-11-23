@@ -46,17 +46,50 @@ function file_env {
     export "$var"="$val"
 }
 
-# Configure agraph if $AG_CFG_FILE file does not exist.
-if [ ! -f $AG_CFG_FILE ]
-then
+if [ -f $AG_CFG_FILE ]
+then # User provided an agraph.cfg
+    echo "Found user-defined AllegroGraph configuration at $AG_CFG_FILE"
+    if [ -z "$(grep -o SuperUser $AG_CFG_FILE)" ]; then
+        file_env 'AGRAPH_SUPER_USER'
+        file_env 'AGRAPH_SUPER_PASSWORD'
+        if [ -z "$AGRAPH_SUPER_USER" ] || [ -z "$AGRAPH_SUPER_PASSWORD" ]; then
+            cat <<EOF
+
+You must set SuperUser name and password if you use custom agraph.cfg
+
+Either set environment variables
+
+    AGRAPH_SUPER_USER=username
+    AGRAPH_SUPER_PASSWORD=password
+
+Or add this line to agraph.cfg
+
+    SuperUser username:password
+
+EOF
+            exit 2
+        fi
+    fi
+
+    file_env 'AGRAPH_LICENSE'
+    if [ -z "$(grep -o Licensee $AG_CFG_FILE)"] && [ -n "$AGRAPH_LICENSE" ]; then
+        cat <<EOF
+User-defined agraph.cfg is found and AGRAPH_LICENSE variable is set.
+
+You must append license to agraph.cfg
+
+EOF
+        exit 3
+    fi
+else # No agraph.cfg set, run configure-agraph
     file_env 'AGRAPH_SUPER_USER'
     file_env 'AGRAPH_SUPER_PASSWORD'
     if [ -z "$AGRAPH_SUPER_USER" ] || [ -z "$AGRAPH_SUPER_PASSWORD" ]; then
         AGRAPH_SUPER_USER=admin
         AGRAPH_SUPER_PASSWORD=$(tr -dc _A-Z-a-z-0-9 </dev/urandom | head -c16)
-	cat <<EOF
+        cat <<EOF
 No config file found and AGRAPH_SUPER_USER and AGRAPH_SUPER_PASSWORD
-variables are not set. Superuser is configured with the following
+variables are not set. SuperUser is configured with the following
 generated credentials:
 
   User:     $AGRAPH_SUPER_USER
