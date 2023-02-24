@@ -17,6 +17,8 @@ USAGE="Usage:
             -d/--dist    - AG distribution archive to use; can be a path to local file or
                            a tarball URL (required if --version is not supplied)
             -t/--tag     - tag to use for the new image (defaults to franzinc/agraph:v<version>)
+            --no-cache   - rebuild image without docker cache
+            --pull-base  - pull base docker image explicitly
 
         run - run a Docker image for a given AG version
             -v/--version - AG version to run; if specified, the franzinc/agraph image will be
@@ -93,6 +95,12 @@ function agdock_build () {
             -t=*|--tag=*)
                 tag="${i#*=}"
                 ;;
+            --no-cache)
+                no_docker_cache="--no-cache"
+                ;;
+            --pull-base)
+                docker_base_image_pull="yes"
+                ;;
             *)
                 echo -e "$COMMAND_NAME build: unknown option $i\n\n$USAGE"
                 exit 1
@@ -134,9 +142,13 @@ function agdock_build () {
         dist="$url_base$archive_name"
     fi
     tag=${tag:-franzinc/agraph:v$full_version}
+    if [ "$docker_base_image_pull" = "yes" ]; then
+        docker pull $(awk '/^FROM/ { print $2; exit }' Dockerfile)
+    fi
     docker build \
 	   --build-arg AG_VERSION=$short_version \
            --build-arg AG_ARCHIVE=$dist \
+           $no_docker_cache \
 	   -t $tag .
 }
 
