@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -ueE -o pipefail
+
 COMMAND_NAME=$0
 SUBCOMMAND_NAME=$1
 
@@ -111,27 +113,27 @@ function agdock_build () {
     # determine the version from the archive name, otherwise expect it
     # to be supplied via --version argument; default to latest nightly
     # build.
-    if [ ! -z "$dist" ]
+    if [ "$dist" ]
     then
         # Full version (including test release, release candidate or nightly tag.
-        full_version=$(echo $dist \
+        full_version=$(echo "$dist" \
                            | grep -oE "$FULL_VERSION_REGEX" \
                            | head -n 1)
         # Short version (of the <i>.<j>.<k> form).
-        short_version=$(echo $full_version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        short_version=$(echo "$full_version" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
     else
         # Full version is expected to be provided.
         full_version=${full_version:-7.0.0-nightly}
         # Short version (of the <i>.<j>.<k> form).
-        short_version=$(echo $full_version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        short_version=$(echo "$full_version" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
         # If full_version contains "nightly" tag, find the latest nightly,
         # otherwise, use the release link.
         # TODO: this logic can be removed if we use consistent URLs
         #       for releases/nightly builds.
-        if echo $full_version | grep -q 'nightly'
+        if echo "$full_version" | grep -q 'nightly'
         then
             version_url=https://franz.com/ftp/pub/agraph/nightly/$short_version/
-            latest_build=$(curl -s $version_url \
+            latest_build=$(curl -s "$version_url" \
                                | grep -oE '[0-9]{8}-[0-9]{6}/' \
                                | head -n 1)
             url_base="$version_url$latest_build"
@@ -143,11 +145,11 @@ function agdock_build () {
     fi
     tag=${tag:-franzinc/agraph:v$full_version}
     docker build \
-	   --build-arg AG_VERSION=$short_version \
-           --build-arg AG_ARCHIVE=$dist \
+	   --build-arg "AG_VERSION=$short_version" \
+           --build-arg "AG_ARCHIVE=$dist" \
            $no_docker_cache \
            $docker_build_pull \
-	   -t $tag .
+	   -t "$tag" .
 }
 
 
@@ -178,11 +180,11 @@ function agdock_run () {
                 ;;
         esac
     done
-    if [ ! -z "$image" ]
+    if [ "$image" ]
     then
-        version=$(echo $image \
+        version=$(echo "$image" \
                       | grep -oE "$FULL_VERSION_REGEX")
-    elif [ ! -z "$version" ]
+    elif [ "$version" ]
     then
         image=franzinc/agraph:v$version
     else
@@ -200,10 +202,10 @@ function agdock_run () {
                --shm-size 1g \
                -e AGRAPH_SUPER_USER \
                -e AGRAPH_SUPER_PASSWORD \
-               -p $AGRAPH_SESSION_PORTS:10000-10034 \
-               -p $AGRAPH_HTTP_PORT:10035 \
-               --name $name \
-               $image
+               -p "$AGRAPH_SESSION_PORTS:10000-10034" \
+               -p "$AGRAPH_HTTP_PORT:10035" \
+               --name "$name" \
+               "$image"
     )
 }
 
@@ -231,12 +233,12 @@ function agdock_push () {
         echo -e "$COMMAND_NAME push: --image argument is required."
         exit 1
     fi
-    docker push $image
-    if [ ! -z "$latest" ]
+    docker push "$image"
+    if [ "$latest" ]
     then
         image_latest="${image%:*}:latest"
-        docker tag $image $image_latest
-        docker push $image_latest
+        docker tag "$image" "$image_latest"
+        docker push "$image_latest"
     fi
 }
 
@@ -266,7 +268,7 @@ function agdock_agtool () {
         echo -e "$COMMAND_NAME agtool: --name is required."
         exit 1
     fi
-    docker exec $name agtool $@
+    docker exec "$name" agtool "$@"
 }
 
 
@@ -275,19 +277,19 @@ function agdock_agtool () {
 
 case $SUBCOMMAND_NAME in
     "help")
-        agdock_help
+        agdock_help "$@"
         ;;
     "build")
-        agdock_build $@
+        agdock_build "$@"
         ;;
     "run")
-        agdock_run $@
+        agdock_run "$@"
         ;;
     "push")
-        agdock_push $@
+        agdock_push "$@"
         ;;
     "agtool")
-        agdock_agtool $@
+        agdock_agtool "$@"
         ;;
     *)
         echo -e "$COMMAND_NAME: unknown command '$SUBCOMMAND_NAME'\n\n$USAGE"
