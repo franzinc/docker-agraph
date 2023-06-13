@@ -147,8 +147,8 @@ function agdock_build () {
     docker build \
 	   --build-arg "AG_VERSION=$short_version" \
            --build-arg "AG_ARCHIVE=$dist" \
-           $no_docker_cache \
-           $docker_build_pull \
+           ${no_docker_cache-} \
+           ${docker_build_pull-} \
 	   -t "$tag" .
 }
 
