@@ -113,7 +113,7 @@ function agdock_build () {
     # determine the version from the archive name, otherwise expect it
     # to be supplied via --version argument; default to latest nightly
     # build.
-    if [ "$dist" ]
+    if [ "${dist-}" ]
     then
         # Full version (including test release, release candidate or nightly tag.
         full_version=$(echo "$dist" \
