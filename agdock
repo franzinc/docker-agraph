@@ -180,11 +180,11 @@ function agdock_run () {
                 ;;
         esac
     done
-    if [ "$image" ]
+    if [ "${image-}" ]
     then
         version=$(echo "$image" \
                       | grep -oE "$FULL_VERSION_REGEX")
-    elif [ "$version" ]
+    elif [ "${version-}" ]
     then
         image=franzinc/agraph:v$version
     else
@@ -228,13 +228,13 @@ function agdock_push () {
                 ;;
         esac
     done
-    if [ -z "$image" ]
+    if [ -z "${image-}" ]
     then
         echo -e "$COMMAND_NAME push: --image argument is required."
         exit 1
     fi
     docker push "$image"
-    if [ "$latest" ]
+    if [ "${latest-}" ]
     then
         image_latest="${image%:*}:latest"
         docker tag "$image" "$image_latest"
@@ -263,7 +263,7 @@ function agdock_agtool () {
     done
     shift # skip --name argument
     shift # skip the -- marker argument
-    if [ -z "$name" ]
+    if [ -z "${name-}" ]
     then
         echo -e "$COMMAND_NAME agtool: --name is required."
         exit 1
