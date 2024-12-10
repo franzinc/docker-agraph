@@ -1,12 +1,12 @@
 # Stage 0 - pull the AG distribution tarball, unpack it and install it
 # into the /agraph directory.
-FROM ubuntu:bionic AS installation-stage
+FROM ubuntu:24.04 AS installation-stage
 
 ARG AG_ARCHIVE
 ARG AG_VERSION
 
 # Install the dependencies needed for AG installation.
-RUN apt-get update && apt-get install -y openssl openssl1.0
+RUN apt-get update && apt-get install -y openssl
 
 # Pull AG distribution tarball into the image.
 ADD $AG_ARCHIVE ./
@@ -21,12 +21,12 @@ RUN if [ -f "${AG_ARCHIVE##*/}" ];                                        \
 
 # Stage 1 - prepare a clean Ubuntu, install dependencies, setup a user
 # and copy the AG installed during stage 0.
-FROM ubuntu:bionic
+FROM ubuntu:24.04
 MAINTAINER Franz Support <support@franz.com>
 
 # Install the same dependencies as for the stage0 (installation) and
 # remove apt registries.
-RUN apt-get update && apt-get install -y openssl openssl1.0 sudo \
+RUN apt-get update && apt-get install -y openssl sudo \
         && rm -rf /var/lib/apt/lists/*
 
 # Create agraph user, enable passwordless sudo and silence the "To run
