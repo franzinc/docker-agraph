@@ -1,5 +1,6 @@
 # Stage 0 - pull the AG distribution tarball, unpack it and install it
 # into the /agraph directory.
+# NOTE: this is the official Ubuntu image
 FROM ubuntu:24.04 AS installation-stage
 
 ARG AG_ARCHIVE
@@ -26,8 +27,12 @@ MAINTAINER Franz Support <support@franz.com>
 
 # Install the same dependencies as for the stage0 (installation) and
 # remove apt registries.
-RUN apt-get update && apt-get install -y openssl sudo \
-        && rm -rf /var/lib/apt/lists/*
+# NOTE: update AND upgrade are required.
+RUN apt-get -y update && \
+    apt-get -y upgrade && \
+    apt-get -y install openssl sudo && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create agraph user, enable passwordless sudo and silence the "To run
 # a command as administrator ..." notification (for more details, see
