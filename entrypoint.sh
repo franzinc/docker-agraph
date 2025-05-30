@@ -72,7 +72,7 @@ EOF
     fi
 
     file_env 'AGRAPH_LICENSE'
-    if [ -z "$(grep -o Licensee $AG_CFG_FILE)"] && [ -n "$AGRAPH_LICENSE" ]; then
+    if [ -z "$(grep -o Licensee $AG_CFG_FILE)" ] && [ -n "$AGRAPH_LICENSE" ]; then
         cat <<EOF
 User-defined agraph.cfg is found and AGRAPH_LICENSE variable is set.
 
