@@ -1,7 +1,6 @@
 # Stage 0 - pull the AG distribution tarball, unpack it and install it
 # into the /agraph directory.
-# NOTE: this is the official Ubuntu image
-FROM ubuntu:24.04 AS installation-stage
+FROM debian:13-slim AS installation-stage
 
 ARG AG_ARCHIVE
 ARG AG_VERSION
@@ -20,9 +19,9 @@ RUN if [ -f "${AG_ARCHIVE##*/}" ];                                        \
 
 
 
-# Stage 1 - prepare a clean Ubuntu, install dependencies, setup a user
+# Stage 1 - prepare a clean base, install dependencies, setup a user
 # and copy the AG installed during stage 0.
-FROM ubuntu:24.04
+FROM debian:13-slim
 MAINTAINER Franz Support <support@franz.com>
 
 # Install the same dependencies as for the stage0 (installation) and

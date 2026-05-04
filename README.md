@@ -2,8 +2,8 @@
 
 This repository contains a set of instruments and configuration files
 needed to build, configure and run AllegroGraph in Docker. The new
-images use Ubuntu as a base image and are not compatible with the old
-DockerHub images (AG v6.6.0 and below), which use CentOS.
+images use Debian Slim as a base image and are not compatible with the
+old DockerHub images (AG v6.6.0 and below), which use CentOS.
 
 
 
