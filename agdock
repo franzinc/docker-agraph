@@ -5,6 +5,8 @@ set -ueE -o pipefail
 COMMAND_NAME=$0
 SUBCOMMAND_NAME=$1
 
+ARCH=${AGDOCK_ARCH-linuxamd64.64}
+
 USAGE="Usage:
     $COMMAND_NAME COMMAND [ARGS]
 
@@ -42,7 +44,7 @@ USAGE="Usage:
         $COMMAND_NAME build --version=7.0.0-nightly
 
         # build Docker image from a local AG tarball:
-        $COMMAND_NAME build --dist=agraph-7.0.0-linuxamd64.64.tar.gz
+        $COMMAND_NAME build --dist=agraph-7.0.0-${ARCH}.tar.gz
 
         # run Docker container with 7.0.0 nightly (must be prebuilt):
         $COMMAND_NAME run --image=franzinc/agraph:v7.0.0-nightly
@@ -138,9 +140,9 @@ function agdock_build () {
                                | head -n 1)
             url_base="$version_url$latest_build"
         else
-            url_base=http://franz.com/ftp/pri/acl/ag/ag$full_version/linuxamd64.64/
+            url_base=http://franz.com/ftp/pri/acl/ag/ag$full_version/${ARCH}/
         fi
-        archive_name="agraph-$short_version-linuxamd64.64.tar.gz"
+        archive_name="agraph-$short_version-${ARCH}.tar.gz"
         dist="$url_base$archive_name"
     fi
     tag=${tag:-franzinc/agraph:v$full_version}
