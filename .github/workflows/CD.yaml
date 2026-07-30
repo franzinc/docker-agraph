@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        ag_version: ["7.3.1", "7.3.0", "7.2.0", "7.1.0", "7.0.4"]
+        ag_version: ["8.5.2", "9.0.2"]
     steps:
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
